@@ -7,8 +7,11 @@
  *Creado: Octubre 03, 2021
  *Ultima modificacion: Octubre 04, 2021
  */
- 
- #include <stdint.h>
+
+//***************************************************************************************************************************************
+// LIBRERIAS NECESARIAS
+//***************************************************************************************************************************************
+#include <stdint.h>
 #include <stdbool.h>
 #include <TM4C123GH6PM.h>
 #include "inc/hw_ints.h"
@@ -26,9 +29,15 @@
 #include "font.h"
 #include "lcd_registers.h"
 
+//***************************************************************************************************************************************
+// LIBRERIAS PARA SD
+//***************************************************************************************************************************************
 #include <SPI.h>
 #include <SD.h>
 
+//***************************************************************************************************************************************
+// DEFINICION DE PINES
+//***************************************************************************************************************************************
 #define LCD_RST PD_0
 #define LCD_CS PD_1
 #define LCD_RS PD_2
@@ -40,7 +49,7 @@ int DPINS[] = {PB_0, PB_1, PB_2, PB_3, PB_4, PB_5, PB_6, PB_7};
 #define SW2 PF_0
 
 //***************************************************************************************************************************************
-// Functions Prototypes
+// PROTOTIPOS
 //***************************************************************************************************************************************
 void LCD_Init(void);
 void LCD_CMD(uint8_t cmd);
@@ -58,6 +67,9 @@ void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int 
 void button1();
 void button2();
 
+//***************************************************************************************************************************************
+// VARIABLES DEL PROGRAMA
+//***************************************************************************************************************************************
 extern uint8_t fondo[];
 
 uint8_t contador = 0;
@@ -66,54 +78,62 @@ volatile byte state = LOW;
 File myFile;
 
 //***************************************************************************************************************************************
-// Initialization
+// INICIALIZACION
 //***************************************************************************************************************************************
 void setup() {
+  //DECLARACION DE PUSH BUTTONS 
   pinMode(SW1, INPUT_PULLUP);
   pinMode(SW2, INPUT_PULLUP);
 
+  //INTERRUPCIONES
   attachInterrupt(digitalPinToInterrupt(SW1), button1, RISING);
   attachInterrupt(digitalPinToInterrupt(SW2), button2, RISING);
 
-  // se inicializa la comunicación con la sd
-  Serial.begin(9600);  //iniciamos comunicacion serial
-  SPI.setModule(0);  //iniciamos comunicacion SPI en el modulo 0
+  //INICIALIZACION COMUNICACION SERIAL
+  Serial.begin(9600);  
+  SPI.setModule(0);  //INICIALIZACION COMUNICACION SPI
   Serial.print("Initializing SD card...");
   
-  pinMode(12, OUTPUT);  //Colocamos el CS del PA3
+  pinMode(12, OUTPUT);  //DEFINICION DEL CS
   
-//Se verifica que se haya iniciado correctamente la SD
+ //VERIFICACION DE LA LECTURA DEL SD
   if (!SD.begin(12)) {
     Serial.println("initialization failed!");
     return;
   }
   Serial.println("initialization done.");
-  
+
+  //INICIALIZACION PANTALLA 
   SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
   GPIOPadConfigSet(GPIO_PORTB_BASE, 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);
   Serial.println("Start");
   LCD_Init();
+  //SE LIMPIA LA PANTALLA
   LCD_Clear(0x00);
 
-  //FillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c)
-  Rect(80, 60, 160, 120, 0x0400);
+  //Rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c)
+  Rect(80, 60, 160, 120, 0x0400); //RECTANGULO SIN RELLENO
 
   //LCD_Print(String text, int x, int y, int fontSize, int color, int background)
-  String text1 = "Lab 08";
+  String text1 = "Lab 08"; //TEXTO DE INICIO
   LCD_Print(text1, 110, 110, 2, 0xffff, 0x0000);
   
   delay(1000);
     
   //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-  LCD_Bitmap(0, 0, 320, 240, fondo);
+  LCD_Bitmap(0, 0, 320, 240, fondo); //IMAGEN DE FONDO
  }
  
 //***************************************************************************************************************************************
-// Loop
+// LOOP PRINCIPAL
 //***************************************************************************************************************************************
 void loop() {
 }
-  void button1(){ // se incrementa el contador para mostrar los 4 fondos disponibles
+
+//***************************************************************************************************************************************
+// SUBRUTINAS
+//***************************************************************************************************************************************
+void button1(){ // INCREMENTO DEL CONTADOR PARA LOS 3 FONDOS
     if (contador<=3){
       contador++;
       delay(300);
@@ -121,29 +141,23 @@ void loop() {
       contador = 0;   
     } 
     
-  switch (contador){ // dependiendo el valor del contador se muestra el fondo respectivo
+  switch (contador){ //SELECCION DE FONDO
   
         case 1: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "tokyo.txt");
+        FondoSD(110, 70, 100, 100, "tokyo.txt");
         break;  
 
         case 2: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "korea.txt");
+        FondoSD(110, 70, 100, 100, "korea.txt");
         break;  
         
         case 3: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "joker.txt");
+        FondoSD(110, 70, 100, 100, "joker.txt");
         break;  
   }
 }
 
-void button2(){ // se incrementa el contador para mostrar los 4 fondos disponibles
+void button2(){ //DECREMENTO DEL CONTADOR PARA LOS 3 FONDOS
     if (contador<=3 && contador>0){
       contador--;
       if (contador == 3){
@@ -157,74 +171,68 @@ void button2(){ // se incrementa el contador para mostrar los 4 fondos disponibl
       contador = 0;   
     } 
     
-  switch (contador){ // dependiendo el valor del contador se muestra el fondo respectivo
+  switch (contador){ //SELECCION DE FONDO
   
         case 1: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "tokyo.txt");
+        FondoSD(110, 70, 100, 100, "tokyo.txt");
         break;  
 
         case 2: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "korea.txt");
+        FondoSD(110, 70, 100, 100, "korea.txt");
         break;  
         
         case 3: 
-       // LCD_Clear(0x00);
-        //LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
-        cargarFondoSD(110, 70, 100, 100, "joker.txt");
+        FondoSD(110, 70, 100, 100, "joker.txt");
         break;  
   }
 }
 
-//para abrir la ruta y el archivo de la imagen para ponerla en la lcd
-void cargarFondoSD(unsigned int x, unsigned int y, unsigned int width, unsigned int height, char * archivo){
+//RUTINA DE LA SD PARA OBTENER LA IMAGEN 
+void FondoSD(unsigned int x, unsigned int y, unsigned int width, unsigned int height, char * archivo){
 
   myFile = SD.open(archivo);
   uint16_t n = 0;
   uint16_t dimension = width*height*2;
-  unsigned char fondo2[dimension] = {};//se le da el dimensionamiento al array según el archivo
+  unsigned char fondo2[dimension] = {};//DIMENSIONAMIENTO DEL ARRAY
   unsigned char caracter;
   unsigned char digito;
   
   if (myFile) {
-    // read from the file until there's nothing else in it:
+    //SE LEE EL ARCHIVO
     
     while(myFile.available()) {
       
       unsigned char value = 0;
       caracter = myFile.read(); 
       
-      if (caracter == 120){ //se lee y verifica el valor de inicio x
+      if (caracter == 120){ //SE VERIFICA QUE SEA EL CARACTER "x"
           for(uint8_t i = 0; i < 2; i++){
             char caracter = myFile.read();
             unsigned char digito = Char_to_hex(caracter);
-            if (i == 0){ // se convierte a su valor decimal
+            if (i == 0){ //CONVERSION A DECIMAL
               value = digito*16;
             }
             else if (i == 1){
               value = value + digito;
             }
           }
-          fondo2[n] = value; //se le da el valor en su respectiva posición del arreglo 
+          fondo2[n] = value; //SE AGREGA EL VALOR AL ARREGLO
           n ++;
       }     
 
     }
-    // close the file:
+    //CIERRE DEL ARCHIVO
     myFile.close();
   } else {
-    // if the file didn't open, print an error:
+    //EN CASO DE ERROR SE MANDA ESTE MENSAJE
     Serial.println("error opening ");
   }
 
-   LCD_Bitmap(x,y,width,height,fondo2); // se dibuja la imagen en la lcd
+   LCD_Bitmap(x,y,width,height,fondo2); //LA IMAGEN SE DIBUJA EN LA LCD
 }
 
 
-// para convertir valor leido del txt en ascci al valor en decimal para formar el hexadecimal
+//RUTINA PARA CONVERSION A DECIMAL
 unsigned char Char_to_hex(char value){
   unsigned char valor;
   if(value>=48 && value <=57){
